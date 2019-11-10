@@ -1,8 +1,4 @@
-library(googlesheets)
 library(tidyverse)
-(my_sheets <- gs_ls())
-my_sheets %>% glimpse()
-ec <- gs_title("East Campus Recordings")
 
 mycols <- readr::cols(
   observer = col_character(),
@@ -11,11 +7,12 @@ mycols <- readr::cols(
   time = col_time(format = "%H:%M:%S")
 )
 
-ec_dat <- ec %>%
-  gs_read(ws = "Sheet1", col_types = mycols)
+ec_dat <- read_csv(file = here::here('east-campus-sound_data.csv'), col_types = mycols) 
 
-ec_xy <- ec %>%
-  gs_read(ws = "lat/lon_coords")
+ec_xy <- read_csv(file = here::here('east-campus-lat-long.csv')) 
+ec_xy[ec_xy$observer == "Harriet Caplin", 'long'] <- -78.915
+ec_xy[ec_xy$observer == "Harriet Caplin", 'lat'] <- 36.0049
+
 
 ec_dat %>% 
   group_by(observer) %>% 
