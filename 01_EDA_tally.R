@@ -56,7 +56,8 @@ ec_dat_sum_xy <- left_join(ec_dat_sum, ec_xy, by = 'observer')
 
 # Does time of day matter?
 ec_dat <- ec_dat %>% 
-  mutate(is_pm = lubridate::pm(time))
+  mutate(is_pm = lubridate::pm(time)) %>% 
+  mutate(month = lubridate::month(date, label = TRUE))
 
 ec_dat %>% 
   group_by(observer, is_pm) %>% 
@@ -116,22 +117,71 @@ ggplot(ec_dat, aes(x = day_of_week, y = recLevel)) +
   geom_boxplot()+
   labs(x = 'Day of Week', y = 'Received Level (dB)')
 
+# explore by day
 ggplot(ec_dat, aes(x = date, color = day_of_week, y = recLevel)) + 
   geom_point()+
   geom_smooth()+
   labs(x = 'Day of Week', y = 'Received Level (dB)')
 
+
 # let's facet that
-ggplot(ec_dat, aes(x = date, color = day_of_week, y = recLevel)) + 
+ggplot(ec_dat, aes(x = date, y = recLevel)) + 
   geom_point()+
   geom_smooth()+
+  geom_hline(yintercept = as.numeric(classAvg)) +
   facet_wrap(~day_of_week, nrow = 2)+
   labs(x = 'Day of Week', y = 'Received Level (dB)')
+
+# explore by time of day
+ggplot(ec_dat, aes(x = date, color = is_pm, y = recLevel)) + 
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~is_pm)+
+  labs(x = 'Day of Week', y = 'Received Level (dB)')
+
+# change palette
+ggplot(ec_dat, aes(x = date, color = is_pm, y = recLevel)) + 
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~is_pm)+
+  scale_color_brewer(palette = 'Set1')+
+  labs(x = 'Day of Week', y = 'Received Level (dB)')
+
+# Plot a histogram
+ggplot(ec_dat, aes(x = recLevel)) + 
+  geom_histogram()+
+  facet_grid(is_pm ~ .)+
+  labs(x = 'Received Level (dB)')
+
+# Plot a histogram - diff colors + density
+ggplot(ec_dat, aes(x = recLevel, y = ..density..)) + 
+  geom_histogram(fill = 'cornsilk', colour = 'grey60')+
+  geom_density()+
+  facet_grid(is_pm ~ .)+
+  labs(x = 'Received Level (dB)')
+
+# Plot a histogram - diff colors + density + average
+# makde the data
+vline.dat <- ec_dat %>% 
+  group_by(is_pm) %>% 
+  summarize(avg = median(recLevel))
+
+ggplot(ec_dat, aes(x = recLevel, y = ..density..)) + 
+  geom_histogram(fill = 'cornsilk', colour = 'grey60')+
+  geom_density()+
+  geom_vline(aes(xintercept = avg), data = vline.dat)+
+  facet_grid(is_pm ~ .)+
+  labs(x = 'Received Level (dB)')
 
 # Boxplot by day = AM/PM
 ggplot(ec_dat, aes(x = day_of_week, y = recLevel, fill = is_pm)) + 
   geom_boxplot()+
   labs(x = 'Day of Week', y = 'Received Level (dB)')
+
+ggplot(ec_dat, aes(x = day_of_week, y = recLevel)) + 
+  geom_boxplot()+
+  labs(x = 'Day of Week', y = 'Received Level (dB)')+
+  facet_wrap(~month)
 
 # but how many points do we have eachday?
 ec_dat %>% 
