@@ -1,6 +1,8 @@
 library(tidyverse)
 library(sp)
 library(leaflet)
+library(fields)
+library(lubridate)
 
 mycols <- readr::cols(
   observer = col_character(),
@@ -33,7 +35,7 @@ ec_dat %>%
             median = median(recLevel)) %>% 
   top_n(-3)
 
-# Class Average
+# Class Average received Level
 classAvg <- ec_dat %>% 
   summarise(median = median(recLevel)) %>% 
   as.vector()
@@ -150,6 +152,7 @@ ggplot(ec_dat, aes(x = date, color = is_pm, y = recLevel)) +
   scale_color_brewer(palette = 'Set1')+
   labs(x = 'Day of Week', y = 'Received Level (dB)')
 
+
 # Plot a histogram
 ggplot(ec_dat, aes(x = recLevel)) + 
   geom_histogram()+
@@ -197,7 +200,7 @@ ec_dat %>%
 
 
 # points over time
-ggplot(ec_dat, aes(x = date, y = recLevel)) +
+ggplot(ec_dat, aes(x = date_time, y = recLevel)) +
   geom_point()+
   geom_smooth()
 
