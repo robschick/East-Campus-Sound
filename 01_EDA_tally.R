@@ -1,4 +1,6 @@
 library(tidyverse)
+library(sp)
+library(leaflet)
 
 mycols <- readr::cols(
   observer = col_character(),
@@ -29,11 +31,16 @@ ec_dat %>%
   top_n(-3)
 
 # Class Average
-ec_dat %>% 
-  summarise(median = median(recLevel))
+classAvg <- ec_dat %>% 
+  summarise(median = median(recLevel)) %>% 
+  as.vector()
+
+ec_dat <- ec_dat %>% 
+  mutate(is_below = if_else(recLevel < as.numeric(classAvg), TRUE, FALSE))
+
 
 # Class Summary - sorted by average
-ec_dat %>% 
+ec_dat_sum <- ec_dat %>% 
   group_by(observer) %>% 
   summarise(n = n(),
             min = fivenum(recLevel)[1],
@@ -42,6 +49,10 @@ ec_dat %>%
             Q3 = fivenum(recLevel)[4],
             max = fivenum(recLevel)[5]) %>% 
   arrange(median)
+
+# join the x,y data
+ec_dat_sum_xy <- left_join(ec_dat_sum, ec_xy, by = 'observer')
+
 
 # Does time of day matter?
 ec_dat <- ec_dat %>% 
@@ -64,9 +75,6 @@ ggplot(ec_dat) +
   geom_boxplot(aes(y = recLevel))
 
 # not that helpful - right? How about by observer?
-ec_dat %>% 
-  arrange(median)
-
 ggplot(ec_dat, aes(x = fct_reorder(observer, recLevel), y = recLevel)) + 
   geom_boxplot()+
   labs(x = 'Observer', y = 'Received Level (dB)')
@@ -76,6 +84,19 @@ ggplot(ec_dat, aes(x = fct_reorder(observer, recLevel), y = recLevel)) +
   geom_boxplot()+
   labs(x = 'Observer', y = 'Received Level (dB)') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
+
+# Which axis orientation do you like better?
+ggplot(ec_dat, aes(x = fct_reorder(observer, recLevel), y = recLevel)) + 
+  geom_boxplot()+
+  labs(x = 'Observer', y = 'Received Level (dB)') +
+  coord_flip()
+
+# # Add average bar and color
+# ggplot(ec_dat, aes(x = fct_reorder(observer, recLevel), y = recLevel, fill = is_below)) + 
+#   geom_bar()+
+#   labs(x = 'Observer', y = 'Received Level (dB)') +
+#   coord_flip()
+
 
 # AM/PM Plotting
 ggplot(ec_dat, aes(x = fct_reorder(observer, recLevel), y = recLevel, fill = is_pm)) + 
@@ -93,6 +114,18 @@ ggplot(ec_dat, aes(x = fct_reorder(observer, recLevel), y = recLevel, fill = is_
 # Boxplot by day
 ggplot(ec_dat, aes(x = day_of_week, y = recLevel)) + 
   geom_boxplot()+
+  labs(x = 'Day of Week', y = 'Received Level (dB)')
+
+ggplot(ec_dat, aes(x = date, color = day_of_week, y = recLevel)) + 
+  geom_point()+
+  geom_smooth()+
+  labs(x = 'Day of Week', y = 'Received Level (dB)')
+
+# let's facet that
+ggplot(ec_dat, aes(x = date, color = day_of_week, y = recLevel)) + 
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~day_of_week, nrow = 2)+
   labs(x = 'Day of Week', y = 'Received Level (dB)')
 
 # Boxplot by day = AM/PM
@@ -120,3 +153,24 @@ ggplot(ec_dat, aes(x = date, y = recLevel)) +
   geom_point()+
   geom_smooth()+
   facet_grid(~ is_pm)
+
+
+# Make a map
+mybins <- seq(min(ec_dat_sum_xy$min), max(ec_dat_sum_xy$max), by=5)
+mypalette <- colorBin(palette="Blues", domain=ec_dat_sum_xy$median, na.color="transparent", bins=mybins)
+
+mytext <- paste(
+  "Observer: ", ec_dat_sum_xy$observer, "<br/>", 
+  "SPL (dB): ", ec_dat_sum_xy$median, sep="") %>%
+  lapply(htmltools::HTML)
+
+
+m <- leaflet(ec_dat_sum_xy) %>% 
+  addTiles()  %>% 
+  addCircleMarkers(~long, ~lat,
+                   fillColor = ~mypalette(median), fillOpacity = 0.9, radius=10, stroke=FALSE,
+                   label = mytext,
+                   labelOptions = labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"),
+                                                textsize = "13px", direction = "auto")) %>%
+  addLegend(pal=mypalette, values=~median, opacity=0.9, title = "Received Level (dB)", position = "bottomright" )
+m  
