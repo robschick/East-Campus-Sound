@@ -11,6 +11,9 @@ mycols <- readr::cols(
 
 ec_dat <- read_csv(file = here::here('east-campus-sound_data.csv'), col_types = mycols) 
 
+ec_dat <- ec_dat %>% 
+  mutate(date_time = lubridate::ymd_hms(paste(ec_dat$date, ec_dat$time)))
+
 ec_xy <- read_csv(file = here::here('east-campus-lat-long.csv')) 
 ec_xy[ec_xy$observer == "Harriet Caplin", 'long'] <- -78.915
 ec_xy[ec_xy$observer == "Harriet Caplin", 'lat'] <- 36.0049
