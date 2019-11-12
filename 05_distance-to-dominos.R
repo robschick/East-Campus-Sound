@@ -24,8 +24,6 @@ ggplot(ec_dat_sum_xy, aes(d2pizza, median))+
   geom_point()+
   geom_smooth()
 
-# What gives?
-  
 
 # Make a map
 mybins <- seq(min(ec_dat_sum_xy$min), max(ec_dat_sum_xy$max), by=5)
