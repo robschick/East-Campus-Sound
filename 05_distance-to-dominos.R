@@ -13,6 +13,19 @@ ec_dat_sum <- ec_dat %>%
 # join the x,y data
 ec_dat_sum_xy <- left_join(ec_dat_sum, ec_xy, by = 'observer')
 
+# Co-vary - how does median sound compare to distance from dominos?
+# What would you expect to find?
+# Domino's Pizza
+pizza <- c(-78.913436, 36.002293)
+ec_dat_sum_xy$d2pizza <- rdist.earth.vec(as.matrix(cbind(ec_dat_sum_xy$long, ec_dat_sum_xy$lat)), 
+                as.matrix(cbind(pizza[1], pizza[2])), miles = FALSE)
+
+ggplot(ec_dat_sum_xy, aes(d2pizza, median))+
+  geom_point()+
+  geom_smooth()
+
+# What gives?
+  
 
 # Make a map
 mybins <- seq(min(ec_dat_sum_xy$min), max(ec_dat_sum_xy$max), by=5)
