@@ -7,6 +7,7 @@ ec_dat <- ec_dat %>%
   mutate(is_pm = lubridate::pm(time)) %>% 
   mutate(month = lubridate::month(date, label = TRUE))
 
+# What does fivenum return?
 ec_dat %>% 
   group_by(observer, is_pm) %>% 
   summarise(n = n(),
